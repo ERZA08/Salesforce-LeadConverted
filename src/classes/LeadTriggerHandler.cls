@@ -15,8 +15,10 @@ public class LeadTriggerHandler extends TriggerHandler {
     private List<Account> accountDuplicateList = new List<Account>();
     private List<Contact> contactList = new List<Contact>();
     private List<Lead> leadConvertedList = new List<Lead>();
+    private List<Database.LeadConvert> leadConverts = new List<Database.LeadConvert>();
     private Map<String,Account> accountMap = new Map <String,Account>();
     private Map<String,Contact> contactMap = new Map <String,Contact>();
+    private Map<String,Lead> leadMap = new Map <String,Lead>();
     
     public override void afterInsert(){
         
@@ -79,24 +81,31 @@ public class LeadTriggerHandler extends TriggerHandler {
                 }
 
                 leadC.setConvertedStatus(convertStatus.MasterLabel);
-
-                Database.LeadConvertResult lcr = Database.convertLead(leadC);
-                System.assert(lcr.isSuccess());
-
-                System.debug('Lead converted ' + lcr.accountid);
-				// Edit the account name
-                acc.Id = lcr.accountid;
-                acc.Name = leadRecord.Company;
-                accountList.add(acc);
                 
-                 // Edit the contact name
-                cont.Id = lcr.contactid;
-                cont.FirstName = leadRecord.FirstName;
-                cont.LastName = leadRecord.LastName;
-                contactList.add(cont);
-               
+                leadConverts.add(leadC);
+
+                leadMap.put(leadRecord.Id,leadRecord);               
             }
         }
+        
+        if (!leadConverts.isEmpty()) {
+            List<Database.LeadConvertResult> lcr = Database.convertLead(leadConverts);
+            if(lcr.size() > 0 && !lcr.isEmpty()){
+                for(Database.LeadConvertResult cr :lcr ){
+                    if(leadMap.containsKey(cr.leadid) && cr.accountid != null && cr.contactid != null){
+                        Lead tempLead = leadMap.get(cr.leadid);
+                        acc.Id = cr.accountid;
+                        acc.Name = tempLead.Company;
+                        accountList.add(acc);
+
+                        cont.Id = cr.contactid;
+                        cont.FirstName = tempLead.FirstName;
+                        cont.LastName = tempLead.LastName;
+                        contactList.add(cont);
+                    }
+                }
+            }
+         }
         
         // Update accounts
         if(!accountList.isEmpty() && accountList.size() > 0){

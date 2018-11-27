@@ -94,4 +94,34 @@ public class LeadTriggerHandler_Test {
         
     }
 
+    @isTest
+    public static void leadConvert100(){
+        List<Lead> leadLst = new List<Lead>();
+        Integer count = 0;
+
+            for (Integer i = 0; i < 100; i++ ) {
+                
+                Lead l = new Lead(Firstname = 'Edgar' + i, 
+                                  Lastname = 'Santillana', 
+                                  Company = 'Test'+ i,
+                                 Status = 'Calificado');
+                leadLst.add(l);
+            }
+        
+        	Test.startTest();
+            	insert leadLst;
+        	Test.stopTest();
+        
+        for(Account acc : [SELECT Id, Name FROM Account Order By Id ASC ]){
+            System.assertEquals('Test' + count, acc.Name);
+            count++;
+        }
+        count = 0;
+        for(Contact con : [SELECT Id, FirstName, LastName FROM Contact Order By Id ASC ]){
+            System.assertEquals('Edgar' + count, con.FirstName);
+            System.assertEquals('Santillana', con.LastName);
+            count++;
+        }
+    }
+
 }
